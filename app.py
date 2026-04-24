@@ -14,10 +14,8 @@ def create_app():
     app = Flask(__name__)
     app.secret_key = "coopgance_secret_key"
 
-    # Inicializar base de datos
     init_db()
 
-    # Registrar blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(lotes_bp)
     app.register_blueprint(calidad_bp)
@@ -36,6 +34,9 @@ def create_app():
 
 
 app = create_app()
+
+# Necesario para Vercel
+application = app
 
 if __name__ == "__main__":
     app.run(debug=True)
