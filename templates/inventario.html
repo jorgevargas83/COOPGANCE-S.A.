@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Módulo de Inventario</h2>
+
+<div class="card shadow mt-4">
+    <div class="card-header bg-dark text-white">
+        Inventario de producto terminado
+    </div>
+    <div class="card-body table-responsive">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Fecha de registro</th>
+                    <th>Origen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in inventario_lista %}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.producto }}</td>
+                    <td>{{ item.cantidad }}</td>
+                    <td>{{ item.fecha_registro }}</td>
+                    <td>{{ item.origen }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center">No hay productos en inventario.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

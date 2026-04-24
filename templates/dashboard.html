@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Panel Principal</h2>
+
+<div class="row mt-4">
+
+    <div class="col-md-2">
+        <div class="card shadow text-center">
+            <div class="card-body">
+                <h6>Total lotes</h6>
+                <h2>{{ total_lotes }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card shadow text-center">
+            <div class="card-body">
+                <h6>Aprobados</h6>
+                <h2 class="text-success">{{ aprobados }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card shadow text-center">
+            <div class="card-body">
+                <h6>Rechazados</h6>
+                <h2 class="text-danger">{{ rechazados }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card shadow text-center">
+            <div class="card-body">
+                <h6>Procesados</h6>
+                <h2 class="text-primary">{{ procesados }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card shadow text-center">
+            <div class="card-body">
+                <h6>Alertas</h6>
+                <h2 class="text-warning">{{ alertas }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card shadow text-center">
+            <div class="card-body">
+                <h6>Inventario</h6>
+                <h2>{{ inventario_total }}</h2>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

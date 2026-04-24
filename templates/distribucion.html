@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Módulo de Distribución</h2>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+{% endwith %}
+
+<div class="row">
+
+    <div class="col-md-5">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                Registrar despacho
+            </div>
+            <div class="card-body">
+                <form method="POST">
+
+                    <div class="mb-3">
+                        <label>Producto en inventario</label>
+                        <select name="inventario_id" class="form-select" required>
+                            <option value="">Seleccione</option>
+                            {% for item in inventario_lista %}
+                                <option value="{{ item.id }}">
+                                    {{ item.producto }} - {{ item.cantidad }} unidades
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Cliente</label>
+                        <select name="cliente" class="form-select" required>
+                            <option value="La Torre">La Torre</option>
+                            <option value="Walmart">Walmart</option>
+                            <option value="Pricesmart">Pricesmart</option>
+                            <option value="Supermercados Oasis">Supermercados Oasis</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Cantidad</label>
+                        <input type="number" name="cantidad" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Responsable</label>
+                        <input type="text" name="responsable" class="form-control" required>
+                    </div>
+
+                    <button class="btn btn-success w-100">Despachar</button>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white">
+                Historial de distribución
+            </div>
+            <div class="card-body table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Fecha</th>
+                            <th>Responsable</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in historial %}
+                        <tr>
+                            <td>{{ item.cliente }}</td>
+                            <td>{{ item.producto }}</td>
+                            <td>{{ item.cantidad }}</td>
+                            <td>{{ item.fecha_salida }}</td>
+                            <td>{{ item.responsable }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center">No hay despachos registrados.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

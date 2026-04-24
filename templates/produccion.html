@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Módulo de Producción</h2>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+{% endwith %}
+
+<div class="row">
+
+    <div class="col-md-5">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                Registrar Producción
+            </div>
+            <div class="card-body">
+                <form method="POST">
+
+                    <div class="mb-3">
+                        <label>Lote aprobado</label>
+                        <select name="lote_id" class="form-select" required>
+                            <option value="">Seleccione</option>
+                            {% for lote in lotes_aprobados %}
+                                <option value="{{ lote.id }}">{{ lote.codigo_lote }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Temperatura pasteurización (°C)</label>
+                        <input type="number" name="temperatura" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Tiempo (segundos)</label>
+                        <input type="number" name="tiempo" class="form-control" required>
+                    </div>
+
+                    <button class="btn btn-success w-100">Procesar</button>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white">
+                Historial Producción
+            </div>
+            <div class="card-body table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Lote</th>
+                            <th>Fecha</th>
+                            <th>Temp</th>
+                            <th>Tiempo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in historial %}
+                        <tr>
+                            <td>{{ p.codigo_lote }}</td>
+                            <td>{{ p.fecha_produccion }}</td>
+                            <td>{{ p.temperatura_proceso }}</td>
+                            <td>{{ p.tiempo_proceso }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4">Sin producción</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

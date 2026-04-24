@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Módulo de Trazabilidad</h2>
+
+<div class="card shadow mb-4">
+    <div class="card-header bg-success text-white">
+        Consultar trazabilidad por lote
+    </div>
+    <div class="card-body">
+        <form method="POST" class="row g-3">
+            <div class="col-md-8">
+                <label class="form-label">Seleccione un lote</label>
+                <select name="lote_id" class="form-select" required>
+                    <option value="">Seleccione</option>
+                    {% for lote in lotes %}
+                        <option value="{{ lote.id }}">{{ lote.codigo_lote }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button class="btn btn-success w-100">Consultar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if lote_info %}
+<div class="row g-4">
+
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white">Datos del lote</div>
+            <div class="card-body">
+                <p><strong>Código:</strong> {{ lote_info.codigo_lote }}</p>
+                <p><strong>Fecha registro:</strong> {{ lote_info.fecha_registro }}</p>
+                <p><strong>Volumen:</strong> {{ lote_info.volumen_litros }} litros</p>
+                <p><strong>Estado:</strong> {{ lote_info.estado_lote }}</p>
+                <p><strong>Productor:</strong> {{ lote_info.productor }}</p>
+                <p><strong>Centro de acopio:</strong> {{ lote_info.centro }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">Control de calidad</div>
+            <div class="card-body">
+                {% if calidad_info %}
+                    <p><strong>Temperatura:</strong> {{ calidad_info.temperatura }} °C</p>
+                    <p><strong>Olor:</strong> {{ calidad_info.olor }}</p>
+                    <p><strong>Color:</strong> {{ calidad_info.color }}</p>
+                    <p><strong>Acidez:</strong> {{ calidad_info.acidez }}</p>
+                    <p><strong>Densidad:</strong> {{ calidad_info.densidad }}</p>
+                    <p><strong>Alcohol:</strong> {{ calidad_info.prueba_alcohol }}</p>
+                    <p><strong>Resultado:</strong> {{ calidad_info.resultado }}</p>
+                    <p><strong>Fecha análisis:</strong> {{ calidad_info.fecha_analisis }}</p>
+                {% else %}
+                    <p>No existe análisis de calidad para este lote.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">Producción</div>
+            <div class="card-body">
+                {% if produccion_info %}
+                    <p><strong>Temperatura de proceso:</strong> {{ produccion_info.temperatura_proceso }} °C</p>
+                    <p><strong>Tiempo de proceso:</strong> {{ produccion_info.tiempo_proceso }} segundos</p>
+                    <p><strong>Fecha producción:</strong> {{ produccion_info.fecha_produccion }}</p>
+                    <p><strong>Estado:</strong> {{ produccion_info.estado }}</p>
+                {% else %}
+                    <p>Este lote aún no ha sido procesado en producción.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">Inventario</div>
+            <div class="card-body">
+                {% if inventario_info %}
+                    <p><strong>Producto:</strong> {{ inventario_info.producto }}</p>
+                    <p><strong>Cantidad disponible:</strong> {{ inventario_info.cantidad }}</p>
+                    <p><strong>Fecha registro:</strong> {{ inventario_info.fecha_registro }}</p>
+                    <p><strong>Origen:</strong> {{ inventario_info.origen }}</p>
+                {% else %}
+                    <p>No existe registro en inventario para este lote.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">Distribución</div>
+            <div class="card-body table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Fecha salida</th>
+                            <th>Responsable</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in distribucion_info %}
+                        <tr>
+                            <td>{{ item.cliente }}</td>
+                            <td>{{ item.producto }}</td>
+                            <td>{{ item.cantidad }}</td>
+                            <td>{{ item.fecha_salida }}</td>
+                            <td>{{ item.responsable }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center">No existe distribución registrada para este lote.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-danger text-white">Alertas asociadas</div>
+            <div class="card-body table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Descripción</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for alerta in alertas_info %}
+                        <tr>
+                            <td>{{ alerta.tipo_alerta }}</td>
+                            <td>{{ alerta.descripcion }}</td>
+                            <td>{{ alerta.fecha_alerta }}</td>
+                            <td>{{ alerta.estado }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center">No hay alertas asociadas a este lote.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endif %}
+
+{% endblock %}

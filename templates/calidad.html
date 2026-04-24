@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Módulo de Calidad</h2>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="row">
+    <div class="col-md-5">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-success text-white">
+                Registrar análisis de calidad
+            </div>
+            <div class="card-body">
+                <form method="POST">
+
+                    <div class="mb-3">
+                        <label class="form-label">Lote pendiente</label>
+                        <select name="lote_id" class="form-select" required>
+                            <option value="">Seleccione un lote</option>
+                            {% for lote in lotes_pendientes %}
+                                <option value="{{ lote.id }}">{{ lote.codigo_lote }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Temperatura (2 a 6 °C)</label>
+                        <input type="number" step="0.1" name="temperatura" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Olor</label>
+                        <select name="olor" class="form-select" required>
+                            <option value="Normal">Normal</option>
+                            <option value="Anormal">Anormal</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Color</label>
+                        <select name="color" class="form-select" required>
+                            <option value="Blanco uniforme">Blanco uniforme</option>
+                            <option value="Alterado">Alterado</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Acidez (0.13 a 0.17)</label>
+                        <input type="number" step="0.01" name="acidez" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Densidad (1.028 a 1.034)</label>
+                        <input type="number" step="0.001" name="densidad" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Prueba de alcohol</label>
+                        <select name="prueba_alcohol" class="form-select" required>
+                            <option value="Negativa">Negativa</option>
+                            <option value="Positiva">Positiva</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100">Guardar análisis</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white">
+                Historial de análisis
+            </div>
+            <div class="card-body table-responsive">
+                <table class="table table-bordered table-striped align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Lote</th>
+                            <th>Fecha</th>
+                            <th>Temperatura</th>
+                            <th>Acidez</th>
+                            <th>Densidad</th>
+                            <th>Resultado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in historial %}
+                        <tr>
+                            <td>{{ item.codigo_lote }}</td>
+                            <td>{{ item.fecha_analisis }}</td>
+                            <td>{{ item.temperatura }} °C</td>
+                            <td>{{ item.acidez }}</td>
+                            <td>{{ item.densidad }}</td>
+                            <td>
+                                {% if item.resultado == 'Aprobado' %}
+                                    <span class="badge bg-success">{{ item.resultado }}</span>
+                                {% else %}
+                                    <span class="badge bg-danger">{{ item.resultado }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center">No hay análisis registrados.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

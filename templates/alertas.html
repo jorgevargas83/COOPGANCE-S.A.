@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Módulo de Alertas</h2>
+
+<div class="card shadow mt-4">
+    <div class="card-header bg-danger text-white">
+        Alertas del sistema
+    </div>
+    <div class="card-body table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead class="table-light">
+                <tr>
+                    <th>Lote</th>
+                    <th>Tipo</th>
+                    <th>Descripción</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for alerta in lista_alertas %}
+                <tr>
+                    <td>{{ alerta.codigo_lote if alerta.codigo_lote else 'N/A' }}</td>
+                    <td>{{ alerta.tipo_alerta }}</td>
+                    <td>{{ alerta.descripcion }}</td>
+                    <td>{{ alerta.fecha_alerta }}</td>
+                    <td>
+                        <span class="badge bg-danger">{{ alerta.estado }}</span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center">No hay alertas registradas.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
