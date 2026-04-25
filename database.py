@@ -1,158 +1,122 @@
-import sqlite3
+"""
+COOPGANCE S.A. - Capa de acceso a datos para Supabase (PostgreSQL)
+-------------------------------------------------------------------
+Reemplazo directo del archivo database.py original (que usaba SQLite).
 
-DB_NAME = "coopgance.db"
+INSTRUCCION IMPORTANTE:
+  Pegar tu URL de Supabase en la variable DATABASE_URL de abajo (linea 25).
+  La URL se obtiene desde:
+    Supabase Dashboard -> Project Settings -> Database -> Connection string -> URI
+"""
 
+import os
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
+
+# =====================================================================
+# >>> CONFIGURACION: PEGAR TU URL DE SUPABASE AQUI <<<
+# =====================================================================
+# Reemplaza toda la cadena entre comillas con la tuya.
+# Ejemplo real: "postgresql://postgres.abcdef:MiPassword123@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://postgres.oqdxnbaxoonqdedfhpjt:vARANAa1597@aws-1-us-east-2.pooler.supabase.com:6543/postgres")
+
+# =====================================================================
+
+
+# --- Wrappers para emular la API de sqlite3 ---
+
+class _CursorWrapper:
+    def __init__(self, cursor):
+        self._cursor = cursor
+
+    def fetchone(self):
+        return self._cursor.fetchone()
+
+    def fetchall(self):
+        return self._cursor.fetchall()
+
+    def __iter__(self):
+        return iter(self._cursor)
+
+    def close(self):
+        try:
+            self._cursor.close()
+        except Exception:
+            pass
+
+
+class _ConnectionWrapper:
+    def __init__(self, conn):
+        self._conn = conn
+
+    def execute(self, query, params=()):
+        query = query.replace("?", "%s")
+        cursor = self._conn.cursor(cursor_factory=RealDictCursor)
+        cursor.execute(query, params)
+        return _CursorWrapper(cursor)
+
+    def executemany(self, query, seq_of_params):
+        query = query.replace("?", "%s")
+        cursor = self._conn.cursor()
+        try:
+            cursor.executemany(query, seq_of_params)
+        finally:
+            cursor.close()
+
+    def commit(self):
+        self._conn.commit()
+
+    def rollback(self):
+        self._conn.rollback()
+
+    def close(self):
+        try:
+            self._conn.close()
+        except Exception:
+            pass
+
+
+# --- Conexion ---
 
 def get_db_connection():
-    conn = sqlite3.connect(DB_NAME)
-    conn.row_factory = sqlite3.Row
-    return conn
+    url = DATABASE_URL
 
+    if "TUPROYECTO" in url or "TUPASSWORD" in url:
+        raise RuntimeError(
+            "\n\n"
+            "========================================================\n"
+            "  ERROR: No has configurado tu URL de Supabase.\n"
+            "========================================================\n"
+            "  Abre el archivo database.py y reemplaza la variable\n"
+            "  DATABASE_URL (linea 25) con tu cadena de conexion real.\n"
+            "\n"
+            "  Como obtenerla:\n"
+            "    1. Entrar a https://supabase.com -> tu proyecto\n"
+            "    2. Project Settings -> Database\n"
+            "    3. Connection string -> URI\n"
+            "    4. Copiar la URL y reemplazar [YOUR-PASSWORD]\n"
+            "========================================================\n"
+        )
 
-def agregar_columna_si_no_existe(cur, tabla, columna, definicion):
-    columnas = [col[1] for col in cur.execute(f"PRAGMA table_info({tabla})").fetchall()]
-    if columna not in columnas:
-        cur.execute(f"ALTER TABLE {tabla} ADD COLUMN {columna} {definicion}")
+    raw_conn = psycopg2.connect(url, sslmode="require")
+    return _ConnectionWrapper(raw_conn)
 
 
 def init_db():
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    cur.executescript("""
-    CREATE TABLE IF NOT EXISTS usuarios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
-        usuario TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        rol TEXT NOT NULL,
-        estado TEXT NOT NULL DEFAULT 'Activo'
-    );
-
-    CREATE TABLE IF NOT EXISTS productores (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
-        telefono TEXT,
-        direccion TEXT,
-        estado TEXT NOT NULL DEFAULT 'Activo'
-    );
-
-    CREATE TABLE IF NOT EXISTS centros_acopio (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
-        ubicacion TEXT,
-        estado TEXT NOT NULL DEFAULT 'Activo'
-    );
-
-    CREATE TABLE IF NOT EXISTS lotes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        codigo_lote TEXT UNIQUE NOT NULL,
-        fecha_registro TEXT NOT NULL,
-        volumen_litros REAL NOT NULL,
-        estado_lote TEXT NOT NULL,
-        productor_id INTEGER NOT NULL,
-        centro_id INTEGER NOT NULL,
-        responsable_recepcion TEXT DEFAULT 'No registrado',
-        FOREIGN KEY (productor_id) REFERENCES productores(id),
-        FOREIGN KEY (centro_id) REFERENCES centros_acopio(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS analisis_calidad (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        lote_id INTEGER NOT NULL,
-        temperatura REAL NOT NULL,
-        olor TEXT NOT NULL,
-        color TEXT NOT NULL,
-        acidez REAL NOT NULL,
-        densidad REAL NOT NULL,
-        prueba_alcohol TEXT NOT NULL,
-        resultado TEXT NOT NULL,
-        fecha_analisis TEXT NOT NULL,
-        responsable_calidad TEXT DEFAULT 'No registrado',
-        FOREIGN KEY (lote_id) REFERENCES lotes(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS alertas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        lote_id INTEGER,
-        tipo_alerta TEXT NOT NULL,
-        descripcion TEXT NOT NULL,
-        fecha_alerta TEXT NOT NULL,
-        estado TEXT NOT NULL DEFAULT 'Activa',
-        FOREIGN KEY (lote_id) REFERENCES lotes(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS produccion (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        lote_id INTEGER NOT NULL,
-        temperatura_proceso REAL NOT NULL,
-        tiempo_proceso INTEGER NOT NULL,
-        fecha_produccion TEXT NOT NULL,
-        estado TEXT NOT NULL,
-        responsable_produccion TEXT DEFAULT 'No registrado',
-        FOREIGN KEY (lote_id) REFERENCES lotes(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS inventario (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        producto TEXT NOT NULL,
-        cantidad INTEGER NOT NULL,
-        fecha_registro TEXT NOT NULL,
-        origen TEXT NOT NULL,
-        ubicacion TEXT DEFAULT 'Cámara Fría 1 - Rack A',
-        estado TEXT DEFAULT 'En almacén'
-    );
-
-    CREATE TABLE IF NOT EXISTS distribucion (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        cliente TEXT NOT NULL,
-        producto TEXT NOT NULL,
-        cantidad INTEGER NOT NULL,
-        fecha_salida TEXT NOT NULL,
-        responsable TEXT NOT NULL,
-        inventario_id INTEGER,
-        origen_lote TEXT
-    );
-    """)
-
-    agregar_columna_si_no_existe(cur, "lotes", "responsable_recepcion", "TEXT DEFAULT 'No registrado'")
-    agregar_columna_si_no_existe(cur, "analisis_calidad", "responsable_calidad", "TEXT DEFAULT 'No registrado'")
-    agregar_columna_si_no_existe(cur, "produccion", "responsable_produccion", "TEXT DEFAULT 'No registrado'")
-    agregar_columna_si_no_existe(cur, "inventario", "ubicacion", "TEXT DEFAULT 'Cámara Fría 1 - Rack A'")
-    agregar_columna_si_no_existe(cur, "inventario", "estado", "TEXT DEFAULT 'En almacén'")
-    agregar_columna_si_no_existe(cur, "distribucion", "inventario_id", "INTEGER")
-    agregar_columna_si_no_existe(cur, "distribucion", "origen_lote", "TEXT")
-
-    admin = cur.execute("SELECT * FROM usuarios WHERE usuario = ?", ("admin",)).fetchone()
-    if not admin:
-        cur.execute("""
-            INSERT INTO usuarios (nombre, usuario, password, rol)
-            VALUES (?, ?, ?, ?)
-        """, ("Administrador General", "admin", "1234", "Administrador"))
-
-    productores = cur.execute("SELECT COUNT(*) AS total FROM productores").fetchone()["total"]
-    if productores == 0:
-        cur.executemany("""
-            INSERT INTO productores (nombre, telefono, direccion)
-            VALUES (?, ?, ?)
-        """, [
-            ("Productor Norte 1", "5555-1001", "Zona Norte"),
-            ("Productor Sur 1", "5555-1002", "Zona Sur"),
-            ("Productor Oriente 1", "5555-1003", "Zona Oriente"),
-            ("Productor Occidente 1", "5555-1004", "Zona Occidente")
-        ])
-
-    centros = cur.execute("SELECT COUNT(*) AS total FROM centros_acopio").fetchone()["total"]
-    if centros == 0:
-        cur.executemany("""
-            INSERT INTO centros_acopio (nombre, ubicacion)
-            VALUES (?, ?)
-        """, [
-            ("Centro de Acopio Norte", "Guatemala"),
-            ("Centro de Acopio Sur", "Guatemala"),
-            ("Centro de Acopio Oriente", "Guatemala"),
-            ("Centro de Acopio Occidente", "Guatemala")
-        ])
-
-    conn.commit()
-    conn.close()
+    """
+    Las tablas se crean ejecutando supabase_schema.sql en el SQL Editor.
+    Esta funcion solo verifica la conexion al iniciar la app.
+    """
+    try:
+        conn = get_db_connection()
+        result = conn.execute("SELECT 1 AS ok").fetchone()
+        conn.close()
+        if result and result.get("ok") == 1:
+            print("[DB] Conexion a Supabase OK")
+    except RuntimeError as e:
+        print(str(e))
+    except Exception as exc:
+        print(f"[DB] ERROR de conexion: {exc}")
+        print("[DB] Verifica tu DATABASE_URL y que ejecutaste supabase_schema.sql")
