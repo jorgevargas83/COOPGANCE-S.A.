@@ -40,6 +40,11 @@
                         <input type="number" name="tiempo" class="form-control" required>
                     </div>
 
+                    <div class="mb-3">
+                        <label>Responsable de producción</label>
+                        <input type="text" name="responsable_produccion" class="form-control" required>
+                    </div>
+
                     <button class="btn btn-success w-100">Procesar</button>
 
                 </form>
@@ -53,13 +58,14 @@
                 Historial Producción
             </div>
             <div class="card-body table-responsive">
-                <table class="table">
-                    <thead>
+                <table class="table table-bordered table-striped">
+                    <thead class="table-light">
                         <tr>
                             <th>Lote</th>
                             <th>Fecha</th>
                             <th>Temp</th>
                             <th>Tiempo</th>
+                            <th>Responsable</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -67,12 +73,13 @@
                         <tr>
                             <td>{{ p.codigo_lote }}</td>
                             <td>{{ p.fecha_produccion }}</td>
-                            <td>{{ p.temperatura_proceso }}</td>
-                            <td>{{ p.tiempo_proceso }}</td>
+                            <td>{{ p.temperatura_proceso }} °C</td>
+                            <td>{{ p.tiempo_proceso }} segundos</td>
+                            <td>{{ p.responsable_produccion }}</td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="4">Sin producción</td>
+                            <td colspan="5" class="text-center">Sin producción</td>
                         </tr>
                         {% endfor %}
                     </tbody>

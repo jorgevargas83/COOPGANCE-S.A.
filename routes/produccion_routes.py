@@ -16,39 +16,47 @@ def produccion():
         lote_id = request.form["lote_id"]
         temperatura = float(request.form["temperatura"])
         tiempo = int(request.form["tiempo"])
+        responsable_produccion = request.form["responsable_produccion"]
 
-        estado = "Procesado"
+        lote_data = conn.execute("""
+            SELECT codigo_lote, volumen_litros
+            FROM lotes
+            WHERE id = ?
+        """, (lote_id,)).fetchone()
 
-        # guardar producción
+        cantidad_botellas = int(lote_data["volumen_litros"])
+
+        if cantidad_botellas >= 3000:
+            ubicacion = "Cámara Fría 1 - Rack A"
+        else:
+            ubicacion = "Cámara Fría 2 - Rack B"
+
         conn.execute("""
-            INSERT INTO produccion (lote_id, temperatura_proceso, tiempo_proceso, fecha_produccion, estado)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO produccion 
+            (lote_id, temperatura_proceso, tiempo_proceso, fecha_produccion, estado, responsable_produccion)
+            VALUES (?, ?, ?, ?, ?, ?)
         """, (
             lote_id,
             temperatura,
             tiempo,
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            estado
+            "Procesado",
+            responsable_produccion
         ))
 
-        # obtener volumen del lote
-        lote = conn.execute("SELECT volumen_litros FROM lotes WHERE id = ?", (lote_id,)).fetchone()
-
-        # convertir litros → botellas de 1L
-        cantidad_botellas = int(lote["volumen_litros"])
-
-        # guardar en inventario
         conn.execute("""
-            INSERT INTO inventario (producto, cantidad, fecha_registro, origen)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO inventario 
+            (producto, cantidad, fecha_registro, origen, ubicacion, estado)
+            VALUES (?, ?, ?, ?, ?, ?)
         """, (
             "Leche Pasteurizada 1L",
             cantidad_botellas,
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Producción"
+            f"Lote {lote_data['codigo_lote']}",
+            ubicacion,
+            "En almacén"
         ))
 
-        # actualizar estado del lote
         conn.execute("""
             UPDATE lotes
             SET estado_lote = 'Procesado'
@@ -61,9 +69,9 @@ def produccion():
         flash("Producción registrada y enviada a inventario.", "success")
         return redirect(url_for("produccion.produccion"))
 
-    # SOLO LOTES APROBADOS
     lotes_aprobados = conn.execute("""
-        SELECT * FROM lotes
+        SELECT *
+        FROM lotes
         WHERE estado_lote = 'Aprobado'
         ORDER BY id DESC
     """).fetchall()

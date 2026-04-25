@@ -36,6 +36,7 @@ def calidad():
         acidez = float(request.form["acidez"])
         densidad = float(request.form["densidad"])
         prueba_alcohol = request.form["prueba_alcohol"]
+        responsable_calidad = request.form["responsable_calidad"]
 
         aprobado = True
 
@@ -56,8 +57,8 @@ def calidad():
 
         conn.execute("""
             INSERT INTO analisis_calidad
-            (lote_id, temperatura, olor, color, acidez, densidad, prueba_alcohol, resultado, fecha_analisis)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (lote_id, temperatura, olor, color, acidez, densidad, prueba_alcohol, resultado, fecha_analisis, responsable_calidad)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             lote_id,
             temperatura,
@@ -67,7 +68,8 @@ def calidad():
             densidad,
             prueba_alcohol,
             resultado,
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            responsable_calidad
         ))
 
         conn.execute("""
@@ -90,7 +92,8 @@ def calidad():
         return redirect(url_for("calidad.calidad"))
 
     lotes_pendientes = conn.execute("""
-        SELECT * FROM lotes
+        SELECT *
+        FROM lotes
         WHERE estado_lote = 'Pendiente de análisis'
         ORDER BY id DESC
     """).fetchall()

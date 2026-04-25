@@ -75,6 +75,11 @@
                         </select>
                     </div>
 
+                    <div class="mb-3">
+                        <label class="form-label">Responsable de calidad</label>
+                        <input type="text" name="responsable_calidad" class="form-control" required>
+                    </div>
+
                     <button type="submit" class="btn btn-success w-100">Guardar análisis</button>
                 </form>
             </div>
@@ -95,6 +100,7 @@
                             <th>Temperatura</th>
                             <th>Acidez</th>
                             <th>Densidad</th>
+                            <th>Responsable</th>
                             <th>Resultado</th>
                         </tr>
                     </thead>
@@ -106,6 +112,7 @@
                             <td>{{ item.temperatura }} °C</td>
                             <td>{{ item.acidez }}</td>
                             <td>{{ item.densidad }}</td>
+                            <td>{{ item.responsable_calidad }}</td>
                             <td>
                                 {% if item.resultado == 'Aprobado' %}
                                     <span class="badge bg-success">{{ item.resultado }}</span>
@@ -116,7 +123,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="6" class="text-center">No hay análisis registrados.</td>
+                            <td colspan="7" class="text-center">No hay análisis registrados.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

@@ -9,6 +9,12 @@ def get_db_connection():
     return conn
 
 
+def agregar_columna_si_no_existe(cur, tabla, columna, definicion):
+    columnas = [col[1] for col in cur.execute(f"PRAGMA table_info({tabla})").fetchall()]
+    if columna not in columnas:
+        cur.execute(f"ALTER TABLE {tabla} ADD COLUMN {columna} {definicion}")
+
+
 def init_db():
     conn = get_db_connection()
     cur = conn.cursor()
@@ -46,6 +52,7 @@ def init_db():
         estado_lote TEXT NOT NULL,
         productor_id INTEGER NOT NULL,
         centro_id INTEGER NOT NULL,
+        responsable_recepcion TEXT DEFAULT 'No registrado',
         FOREIGN KEY (productor_id) REFERENCES productores(id),
         FOREIGN KEY (centro_id) REFERENCES centros_acopio(id)
     );
@@ -61,6 +68,7 @@ def init_db():
         prueba_alcohol TEXT NOT NULL,
         resultado TEXT NOT NULL,
         fecha_analisis TEXT NOT NULL,
+        responsable_calidad TEXT DEFAULT 'No registrado',
         FOREIGN KEY (lote_id) REFERENCES lotes(id)
     );
 
@@ -73,33 +81,48 @@ def init_db():
         estado TEXT NOT NULL DEFAULT 'Activa',
         FOREIGN KEY (lote_id) REFERENCES lotes(id)
     );
-    CREATE TABLE IF NOT EXISTS produccion (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    lote_id INTEGER NOT NULL,
-    temperatura_proceso REAL NOT NULL,
-    tiempo_proceso INTEGER NOT NULL,
-    fecha_produccion TEXT NOT NULL,
-    estado TEXT NOT NULL,
-    FOREIGN KEY (lote_id) REFERENCES lotes(id)
-);
 
-CREATE TABLE IF NOT EXISTS inventario (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    producto TEXT NOT NULL,
-    cantidad INTEGER NOT NULL,
-    fecha_registro TEXT NOT NULL,
-    origen TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS distribucion (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    cliente TEXT NOT NULL,
-    producto TEXT NOT NULL,
-    cantidad INTEGER NOT NULL,
-    fecha_salida TEXT NOT NULL,
-    responsable TEXT NOT NULL
-);
+    CREATE TABLE IF NOT EXISTS produccion (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        lote_id INTEGER NOT NULL,
+        temperatura_proceso REAL NOT NULL,
+        tiempo_proceso INTEGER NOT NULL,
+        fecha_produccion TEXT NOT NULL,
+        estado TEXT NOT NULL,
+        responsable_produccion TEXT DEFAULT 'No registrado',
+        FOREIGN KEY (lote_id) REFERENCES lotes(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS inventario (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        producto TEXT NOT NULL,
+        cantidad INTEGER NOT NULL,
+        fecha_registro TEXT NOT NULL,
+        origen TEXT NOT NULL,
+        ubicacion TEXT DEFAULT 'Cámara Fría 1 - Rack A',
+        estado TEXT DEFAULT 'En almacén'
+    );
+
+    CREATE TABLE IF NOT EXISTS distribucion (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        cliente TEXT NOT NULL,
+        producto TEXT NOT NULL,
+        cantidad INTEGER NOT NULL,
+        fecha_salida TEXT NOT NULL,
+        responsable TEXT NOT NULL,
+        inventario_id INTEGER,
+        origen_lote TEXT
+    );
     """)
-    
+
+    agregar_columna_si_no_existe(cur, "lotes", "responsable_recepcion", "TEXT DEFAULT 'No registrado'")
+    agregar_columna_si_no_existe(cur, "analisis_calidad", "responsable_calidad", "TEXT DEFAULT 'No registrado'")
+    agregar_columna_si_no_existe(cur, "produccion", "responsable_produccion", "TEXT DEFAULT 'No registrado'")
+    agregar_columna_si_no_existe(cur, "inventario", "ubicacion", "TEXT DEFAULT 'Cámara Fría 1 - Rack A'")
+    agregar_columna_si_no_existe(cur, "inventario", "estado", "TEXT DEFAULT 'En almacén'")
+    agregar_columna_si_no_existe(cur, "distribucion", "inventario_id", "INTEGER")
+    agregar_columna_si_no_existe(cur, "distribucion", "origen_lote", "TEXT")
+
     admin = cur.execute("SELECT * FROM usuarios WHERE usuario = ?", ("admin",)).fetchone()
     if not admin:
         cur.execute("""

@@ -23,34 +23,49 @@ def lotes():
         productor_id = request.form["productor_id"]
         centro_id = request.form["centro_id"]
         volumen_litros = request.form["volumen_litros"]
+        responsable_recepcion = request.form["responsable_recepcion"]
 
         codigo_lote = generar_codigo_lote()
         fecha_registro = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         estado_lote = "Pendiente de análisis"
 
         conn.execute("""
-            INSERT INTO lotes (codigo_lote, fecha_registro, volumen_litros, estado_lote, productor_id, centro_id)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (codigo_lote, fecha_registro, volumen_litros, estado_lote, productor_id, centro_id))
+            INSERT INTO lotes
+            (codigo_lote, fecha_registro, volumen_litros, estado_lote, productor_id, centro_id, responsable_recepcion)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            codigo_lote,
+            fecha_registro,
+            volumen_litros,
+            estado_lote,
+            productor_id,
+            centro_id,
+            responsable_recepcion
+        ))
 
         conn.commit()
+        conn.close()
+
         flash(f"Lote {codigo_lote} registrado correctamente.", "success")
         return redirect(url_for("lotes.lotes"))
 
     productores = conn.execute("""
-        SELECT * FROM productores
+        SELECT *
+        FROM productores
         WHERE estado = 'Activo'
         ORDER BY nombre
     """).fetchall()
 
     centros = conn.execute("""
-        SELECT * FROM centros_acopio
+        SELECT *
+        FROM centros_acopio
         WHERE estado = 'Activo'
         ORDER BY nombre
     """).fetchall()
 
     lista_lotes = conn.execute("""
-        SELECT l.id, l.codigo_lote, l.fecha_registro, l.volumen_litros, l.estado_lote,
+        SELECT l.id, l.codigo_lote, l.fecha_registro, l.volumen_litros, 
+               l.estado_lote, l.responsable_recepcion,
                p.nombre AS productor, c.nombre AS centro
         FROM lotes l
         INNER JOIN productores p ON l.productor_id = p.id
@@ -125,22 +140,22 @@ def trazabilidad():
         codigo_lote = lote_info["codigo_lote"] if lote_info else None
 
         if codigo_lote:
+            origen_lote = f"Lote {codigo_lote}"
+
             inventario_info = conn.execute("""
                 SELECT *
                 FROM inventario
                 WHERE origen = ?
-                   OR origen = 'Producción'
                 ORDER BY id DESC
                 LIMIT 1
-            """, (f"Lote {codigo_lote}",)).fetchone()
+            """, (origen_lote,)).fetchone()
 
-        if inventario_info:
             distribucion_info = conn.execute("""
                 SELECT *
                 FROM distribucion
-                WHERE producto = ?
+                WHERE origen_lote = ?
                 ORDER BY id DESC
-            """, (inventario_info["producto"],)).fetchall()
+            """, (origen_lote,)).fetchall()
 
     conn.close()
 

@@ -4,6 +4,12 @@
 
 <h2>Módulo de Inventario</h2>
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+{% endwith %}
+
 <div class="card shadow mt-4">
     <div class="card-header bg-dark text-white">
         Inventario de producto terminado
@@ -15,8 +21,10 @@
                     <th>ID</th>
                     <th>Producto</th>
                     <th>Cantidad</th>
-                    <th>Fecha de registro</th>
                     <th>Origen</th>
+                    <th>Ubicación</th>
+                    <th>Estado</th>
+                    <th>Mover</th>
                 </tr>
             </thead>
             <tbody>
@@ -25,17 +33,126 @@
                     <td>{{ item.id }}</td>
                     <td>{{ item.producto }}</td>
                     <td>{{ item.cantidad }}</td>
-                    <td>{{ item.fecha_registro }}</td>
                     <td>{{ item.origen }}</td>
+                    <td>{{ item.ubicacion }}</td>
+                    <td>
+                        {% if item.estado == 'En almacén' %}
+                            <span class="badge bg-success">{{ item.estado }}</span>
+                        {% elif item.estado == 'En despacho' %}
+                            <span class="badge bg-warning text-dark">{{ item.estado }}</span>
+                        {% elif item.estado == 'Agotado' %}
+                            <span class="badge bg-danger">{{ item.estado }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ item.estado }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('inventario.mover_inventario', id=item.id) }}">
+                            <select name="ubicacion" class="form-select form-select-sm mb-2">
+                                <option value="Cámara Fría 1 - Rack A">Cámara Fría 1 - Rack A</option>
+                                <option value="Cámara Fría 1 - Rack B">Cámara Fría 1 - Rack B</option>
+                                <option value="Cámara Fría 2 - Rack A">Cámara Fría 2 - Rack A</option>
+                                <option value="Cámara Fría 2 - Rack B">Cámara Fría 2 - Rack B</option>
+                                <option value="Área de Despacho">Área de Despacho</option>
+                            </select>
+                            <button class="btn btn-success btn-sm w-100">Mover</button>
+                        </form>
+                    </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="5" class="text-center">No hay productos en inventario.</td>
+                    <td colspan="7" class="text-center">No hay productos en inventario.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+</div>
+
+<hr class="my-4">
+
+<h4>Mapa visual del almacén</h4>
+
+<div class="row mt-3">
+
+    <div class="col-md-4">
+        <div class="card shadow p-3 border-success">
+            <h5 class="text-success">Cámara Fría 1</h5>
+            <p class="text-muted">Zona de almacenamiento principal</p>
+
+            {% for item in inventario_lista %}
+                {% if item.ubicacion and 'Cámara Fría 1' in item.ubicacion %}
+                    <div class="border rounded p-2 mb-2 bg-light">
+                        <strong>{{ item.origen }}</strong><br>
+                        {{ item.producto }}<br>
+                        {{ item.cantidad }} unidades<br>
+                        <small>{{ item.ubicacion }}</small><br>
+
+                        {% if item.estado == 'En almacén' %}
+                            <span class="badge bg-success">{{ item.estado }}</span>
+                        {% elif item.estado == 'En despacho' %}
+                            <span class="badge bg-warning text-dark">{{ item.estado }}</span>
+                        {% else %}
+                            <span class="badge bg-danger">{{ item.estado }}</span>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow p-3 border-primary">
+            <h5 class="text-primary">Cámara Fría 2</h5>
+            <p class="text-muted">Zona secundaria de almacenamiento</p>
+
+            {% for item in inventario_lista %}
+                {% if item.ubicacion and 'Cámara Fría 2' in item.ubicacion %}
+                    <div class="border rounded p-2 mb-2 bg-light">
+                        <strong>{{ item.origen }}</strong><br>
+                        {{ item.producto }}<br>
+                        {{ item.cantidad }} unidades<br>
+                        <small>{{ item.ubicacion }}</small><br>
+
+                        {% if item.estado == 'En almacén' %}
+                            <span class="badge bg-success">{{ item.estado }}</span>
+                        {% elif item.estado == 'En despacho' %}
+                            <span class="badge bg-warning text-dark">{{ item.estado }}</span>
+                        {% else %}
+                            <span class="badge bg-danger">{{ item.estado }}</span>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow p-3 border-warning">
+            <h5 class="text-warning">Área de Despacho</h5>
+            <p class="text-muted">Producto listo para salida</p>
+
+            {% for item in inventario_lista %}
+                {% if item.ubicacion and 'Despacho' in item.ubicacion %}
+                    <div class="border rounded p-2 mb-2 bg-light">
+                        <strong>{{ item.origen }}</strong><br>
+                        {{ item.producto }}<br>
+                        {{ item.cantidad }} unidades<br>
+                        <small>{{ item.ubicacion }}</small><br>
+
+                        {% if item.estado == 'En despacho' %}
+                            <span class="badge bg-warning text-dark">{{ item.estado }}</span>
+                        {% elif item.estado == 'Agotado' %}
+                            <span class="badge bg-danger">{{ item.estado }}</span>
+                        {% else %}
+                            <span class="badge bg-success">{{ item.estado }}</span>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
 </div>
 
 {% endblock %}
