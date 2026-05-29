@@ -40,7 +40,7 @@
       <div class="timeline-title">📍 Paso 1 — Recepción del lote</div>
       <div class="detail-grid">
         <div class="detail-item"><span>Código</span><strong class="text-mono">{{ lote_info.codigo_lote }}</strong></div>
-        <div class="detail-item"><span>Fecha registro</span>{{ lote_info.fecha_registro[:10] if lote_info.fecha_registro else '—' }}</div>
+        <div class="detail-item"><span>Fecha registro</span>{{ lote_info.fecha_registro|string|truncate(10, True, '') if lote_info.fecha_registro else '—' }}</div>
         <div class="detail-item"><span>Productor</span>{{ lote_info.productor }}</div>
         <div class="detail-item"><span>Centro de acopio</span>{{ lote_info.centro }}</div>
         <div class="detail-item"><span>Volumen</span><strong>{{ lote_info.volumen_litros | int }} litros</strong></div>
