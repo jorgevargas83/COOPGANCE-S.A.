@@ -1,0 +1,390 @@
+{% extends 'base.html' %}
+{% block title %}Ventas{% endblock %}
+{% block page_title %}Módulo de Ventas{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2>Gestión de Ventas y Rentabilidad</h2>
+    <p>Control de ingresos, costos de producción y margen de ganancia por venta</p>
+  </div>
+</div>
+
+<!-- KPIs PRINCIPALES -->
+<div class="kpi-grid">
+  <div class="kpi-card gold">
+    <div class="kpi-icon">💰</div>
+    <div class="kpi-value">Q {{ '{:,.0f}'.format(totales.ingresos|float) }}</div>
+    <div class="kpi-label">Ingresos por ventas</div>
+  </div>
+  <div class="kpi-card red">
+    <div class="kpi-icon">📉</div>
+    <div class="kpi-value">Q {{ '{:,.0f}'.format(totales.costos|float) }}</div>
+    <div class="kpi-label">Costo de producción</div>
+  </div>
+  <div class="kpi-card green">
+    <div class="kpi-icon">📈</div>
+    <div class="kpi-value">Q {{ '{:,.0f}'.format(totales.ganancia|float) }}</div>
+    <div class="kpi-label">Ganancia neta</div>
+  </div>
+  <div class="kpi-card teal">
+    <div class="kpi-icon">📊</div>
+    <div class="kpi-value">{{ totales.margen_global }}%</div>
+    <div class="kpi-label">Margen de ganancia</div>
+  </div>
+  <div class="kpi-card blue">
+    <div class="kpi-icon">✅</div>
+    <div class="kpi-value">Q {{ '{:,.0f}'.format(totales.cobrado|float) }}</div>
+    <div class="kpi-label">Cobrado</div>
+  </div>
+  <div class="kpi-card yellow">
+    <div class="kpi-icon">⏳</div>
+    <div class="kpi-value">Q {{ '{:,.0f}'.format(totales.pendiente|float) }}</div>
+    <div class="kpi-label">Pendiente de cobro</div>
+  </div>
+</div>
+
+<!-- ESTRUCTURA DE COSTOS + GRÁFICO -->
+<div class="grid-2">
+
+  <!-- Desglose de costos por litro -->
+  <div class="card">
+    <div class="card-header" style="background:#991b1b;color:#fff">📊 Estructura de costos por litro (Plan de Inversión)</div>
+    <div class="card-body" style="padding:0">
+      {% set total_costo = estructura_costos|map(attribute='costo_por_litro')|sum %}
+      {% for c in estructura_costos %}
+      <div class="info-row" style="padding:10px 16px">
+        <div>
+          <span class="text-sm fw-bold">{{ c.concepto }}</span>
+          <span class="badge badge-gray" style="margin-left:6px">{{ c.categoria }}</span>
+          {% if c.descripcion %}
+            <div style="font-size:10px;color:var(--text-muted);margin-top:2px">{{ c.descripcion }}</div>
+          {% endif %}
+        </div>
+        <strong style="color:var(--danger)">Q {{ '{:.2f}'.format(c.costo_por_litro|float) }}</strong>
+      </div>
+      {% endfor %}
+      <div style="padding:12px 16px;background:#fee2e2;display:flex;justify-content:space-between;font-weight:700">
+        <span>COSTO TOTAL POR LITRO</span>
+        <span style="color:#991b1b;font-size:16px">Q {{ '{:.2f}'.format(total_costo|float) }}</span>
+      </div>
+      <div style="padding:12px 16px;background:#dcfce7;display:flex;justify-content:space-between;font-weight:700">
+        <span>PRECIO VENTA MAYORISTA / LITRO</span>
+        <span style="color:#166534;font-size:16px">Q 15.00</span>
+      </div>
+      <div style="padding:12px 16px;background:#f0fdf4;display:flex;justify-content:space-between;font-weight:700;border-radius:0 0 var(--radius) var(--radius)">
+        <span>GANANCIA POR LITRO</span>
+        <span style="color:#166534;font-size:16px">Q {{ '{:.2f}'.format(15.0 - total_costo|float) }} ({{ '{:.1f}'.format(((15.0 - total_costo|float) / 15.0) * 100) }}%)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Distribución del costo (visual) -->
+  <div class="card">
+    <div class="card-header dark">💵 Distribución del costo total acumulado</div>
+    <div class="card-body">
+      {% if totales.costos|float > 0 %}
+        {% set tc = totales.costos|float %}
+        {% set items = [
+          ('🥛 Materia prima (leche cruda Q5.50/L)', totales.total_materia|float, '#dc2626'),
+          ('⚙️ Proceso (pasteurización)', totales.total_proceso|float, '#ea580c'),
+          ('📦 Empaque (Tetra Pak)', totales.total_empaque|float, '#d97706'),
+          ('👷 Mano de obra (43 empleados)', totales.total_mano_obra|float, '#0369a1'),
+          ('🚛 Transporte (14 vehículos)', totales.total_transporte|float, '#7c3aed'),
+          ('⚡ Energía (7 cuartos fríos)', totales.total_energia|float, '#0891b2'),
+          ('🔧 Otros (mant. + admin.)', totales.total_otros|float, '#6b7280')
+        ] %}
+        {% for label, val, color in items %}
+          {% set pct = (val / tc * 100) if tc > 0 else 0 %}
+          <div style="margin-bottom:10px">
+            <div class="flex justify-between" style="margin-bottom:4px">
+              <span style="font-size:11.5px">{{ label }}</span>
+              <span style="font-size:11.5px;font-weight:600">Q {{ '{:,.0f}'.format(val) }} ({{ '{:.1f}'.format(pct) }}%)</span>
+            </div>
+            <div class="progress-wrap">
+              <div class="progress-fill" style="width:{{ pct }}%;background:{{ color }}"></div>
+            </div>
+          </div>
+        {% endfor %}
+        <hr class="divider">
+        <div class="flex justify-between" style="font-weight:700;font-size:13px">
+          <span>Costo total</span>
+          <span style="color:var(--danger)">Q {{ '{:,.2f}'.format(tc) }}</span>
+        </div>
+      {% else %}
+        <p class="text-muted text-sm">Sin datos de costos aún.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- INGRESOS vs COSTOS POR MES + TOP CLIENTES -->
+<div class="grid-2 mt-3">
+  <div class="card">
+    <div class="card-header dark">📈 Ingresos vs Costos por mes</div>
+    <div class="card-body">
+      {% if ventas_mes %}
+        <div style="display:flex;align-items:flex-end;gap:6px;height:120px;margin-bottom:8px">
+          {% set max_v = ventas_mes|map(attribute='ingresos')|max %}
+          {% for m in ventas_mes %}
+            {% set h_ing = ((m.ingresos|float / max_v|float) * 100)|int %}
+            {% set h_cos = ((m.costos|float / max_v|float) * 100)|int %}
+            {% set h_gan = ((m.ganancia|float / max_v|float) * 100)|int %}
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+              <span style="font-size:8px;color:var(--success);font-weight:700">+Q{{ '{:,.0f}'.format(m.ganancia|float) }}</span>
+              <div style="display:flex;gap:2px;align-items:flex-end;height:90px">
+                <div style="width:12px;height:{{ h_ing }}px;background:var(--primary);border-radius:2px 2px 0 0" title="Ingresos"></div>
+                <div style="width:12px;height:{{ h_cos }}px;background:#dc2626;border-radius:2px 2px 0 0" title="Costos"></div>
+              </div>
+              <span style="font-size:9px;color:var(--text-muted)">{{ m.mes }}</span>
+            </div>
+          {% endfor %}
+        </div>
+        <div style="display:flex;gap:16px;justify-content:center;font-size:10px;color:var(--text-muted)">
+          <span>🟩 Ingresos</span><span>🟥 Costos</span><span>💚 Ganancia</span>
+        </div>
+      {% else %}
+        <p class="text-muted text-sm">Sin datos aún.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header dark">🏆 Top clientes (ingresos y ganancia)</div>
+    <div class="card-body" style="padding:0">
+      {% for c in top_clientes %}
+      <div class="info-row" style="padding:12px 16px">
+        <div>
+          <span class="text-sm fw-bold">{{ c.cliente }}</span>
+          <span class="text-muted" style="font-size:10px;margin-left:4px">({{ c.num_compras }} ventas)</span>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:700;color:var(--primary)">Q {{ '{:,.0f}'.format(c.total_ventas|float) }}</div>
+          <div style="font-size:10px;color:var(--success)">Ganancia: Q {{ '{:,.0f}'.format(c.total_ganancia|float) }}</div>
+        </div>
+      </div>
+      {% else %}
+      <div style="padding:24px;text-align:center;color:var(--text-muted)">Sin ventas aún.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- FORMULARIO + HISTORIAL -->
+<div class="grid-2 mt-3">
+  <div class="card">
+    <div class="card-header green">💰 Registrar nueva venta</div>
+    <div class="card-body">
+      <form method="POST">
+        <div class="form-group">
+          <label class="form-label">Vincular a despacho (opcional)</label>
+          <select name="distribucion_id" class="form-select" id="sel-dist" onchange="autoFill()">
+            <option value="">— Venta sin despacho vinculado —</option>
+            {% for d in distribuciones %}
+              <option value="{{ d.id }}" data-cliente="{{ d.cliente }}" data-producto="{{ d.producto }}"
+                data-pres="{{ d.presentacion }}" data-cant="{{ d.cantidad }}">
+                #{{ d.id }} — {{ d.cliente }} ({{ d.cantidad }} uds {{ d.presentacion }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Cliente</label>
+          <input type="text" name="cliente" id="f-cliente" class="form-control" placeholder="Nombre del cliente" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Producto</label>
+            <input type="text" name="producto" id="f-producto" class="form-control" value="Leche Pasteurizada" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Presentación</label>
+            <select name="presentacion" id="f-pres" class="form-select" required onchange="updateCosto()">
+              <option value="1L">1 Litro — Costo Q 11.20</option>
+              <option value="500ml">500 ml — Costo Q 6.50</option>
+              <option value="250ml">250 ml — Costo Q 3.96</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row-3">
+          <div class="form-group">
+            <label class="form-label">Cantidad</label>
+            <input type="number" name="cantidad" id="f-cant" min="1" class="form-control" placeholder="Unidades" required oninput="calcTotal()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Costo unit. (auto)</label>
+            <input type="text" id="f-costo-display" class="form-control" value="Q 11.20" disabled style="background:#fee2e2;font-weight:700;color:#991b1b">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Precio venta unit. (Q)</label>
+            <input type="number" step="0.01" name="precio_unitario" id="f-precio" class="form-control" placeholder="15.00" required oninput="calcTotal()">
+          </div>
+        </div>
+
+        <!-- Desglose en vivo -->
+        <div style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:14px">
+          <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">Desglose de esta venta</div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span class="text-sm">Materia prima (leche cruda)</span>
+            <span class="text-sm" style="color:#991b1b" id="d-materia">Q 0.00</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span class="text-sm">Proceso + empaque + energía</span>
+            <span class="text-sm" style="color:#991b1b" id="d-proceso">Q 0.00</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span class="text-sm">Mano de obra + transporte</span>
+            <span class="text-sm" style="color:#991b1b" id="d-mano">Q 0.00</span>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:6px;margin-top:6px;display:flex;justify-content:space-between">
+            <span class="text-sm fw-bold" style="color:#991b1b">COSTO TOTAL</span>
+            <span class="fw-bold" style="color:#991b1b" id="d-costo">Q 0.00</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px">
+            <span class="text-sm fw-bold" style="color:var(--primary)">VENTA TOTAL</span>
+            <span class="fw-bold" style="color:var(--primary)" id="d-venta">Q 0.00</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:2px solid var(--success)">
+            <span class="fw-bold" style="color:var(--success);font-size:14px">GANANCIA</span>
+            <span class="fw-bold" style="color:var(--success);font-size:16px" id="d-ganancia">Q 0.00 (0%)</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Método de pago</label>
+            <select name="metodo_pago" class="form-select" required>
+              <option value="Transferencia">Transferencia</option>
+              <option value="Efectivo">Efectivo</option>
+              <option value="Cheque">Cheque</option>
+              <option value="Crédito 30 días">Crédito 30 días</option>
+              <option value="Crédito 60 días">Crédito 60 días</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">NIT del cliente</label>
+            <input type="text" name="nit_cliente" class="form-control" placeholder="1234567-8">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Responsable</label>
+          <input type="text" name="responsable" class="form-control" placeholder="Nombre del vendedor" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Observaciones (opcional)</label>
+          <textarea name="observaciones" class="form-control" rows="2" placeholder="Notas..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">💰 Registrar venta</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header dark">📋 Historial de ventas</div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Fecha</th><th>Cliente</th><th>Pres.</th><th>Cant.</th>
+            <th>Costo</th><th>Venta</th><th>Ganancia</th><th>Margen</th><th>Estado</th><th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in historial %}
+          <tr {% if v.estado in ('Pendiente de pago','Crédito') %}style="background:#fffbeb"{% elif v.estado == 'Cancelada' %}style="opacity:.5"{% endif %}>
+            <td class="text-mono text-muted" style="font-size:11px">{{ v.id }}</td>
+            <td class="text-sm text-muted">{{ v.fecha_venta|fecha }}</td>
+            <td class="text-sm fw-bold">{{ v.cliente }}</td>
+            <td><span class="badge badge-blue">{{ v.presentacion }}</span></td>
+            <td class="fw-bold">{{ v.cantidad }}</td>
+            <td class="text-sm" style="color:var(--danger)">Q {{ '{:,.0f}'.format(v.costo_total|float) }}</td>
+            <td class="fw-bold" style="color:var(--primary)">Q {{ '{:,.0f}'.format(v.total|float) }}</td>
+            <td class="fw-bold" style="color:var(--success)">Q {{ '{:,.0f}'.format(v.ganancia_total|float) }}</td>
+            <td>
+              <span class="badge {% if v.margen_porcentaje|float >= 30 %}badge-green{% elif v.margen_porcentaje|float >= 20 %}badge-yellow{% else %}badge-red{% endif %}">
+                {{ v.margen_porcentaje }}%
+              </span>
+            </td>
+            <td>
+              {% if v.estado == 'Completada' %}<span class="badge badge-green">✅ Pagada</span>
+              {% elif v.estado in ('Pendiente de pago','Crédito') %}<span class="badge badge-yellow">⏳ Pendiente</span>
+              {% elif v.estado == 'Cancelada' %}<span class="badge badge-red">❌ Cancelada</span>
+              {% endif %}
+            </td>
+            <td style="white-space:nowrap">
+              {% if v.estado in ('Pendiente de pago','Crédito') %}
+                <form method="POST" action="/marcar_pagada/{{ v.id }}" style="display:inline">
+                  <button type="submit" class="btn btn-sm btn-primary" title="Marcar pagada">✅</button>
+                </form>
+              {% endif %}
+              {% if v.estado != 'Cancelada' %}
+                <form method="POST" action="/cancelar_venta/{{ v.id }}" style="display:inline">
+                  <button type="submit" class="btn btn-sm btn-danger" title="Cancelar" onclick="return confirm('¿Cancelar?')">✕</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr class="empty-row"><td colspan="11">Sin ventas registradas.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const COSTOS = {
+  '1L':    {materia:5.50, proceso:0.85, empaque:1.25, mano:1.62, trans:0.83, energia:0.60, otros:0.55, total:11.20},
+  '500ml': {materia:2.75, proceso:0.50, empaque:1.10, mano:0.95, trans:0.50, energia:0.35, otros:0.35, total:6.50},
+  '250ml': {materia:1.375,proceso:0.30, empaque:0.95, mano:0.60, trans:0.32, energia:0.22, otros:0.22, total:3.96}
+};
+
+function fmt(n) { return 'Q ' + n.toLocaleString('es-GT', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+function updateCosto() {
+  const pres = document.getElementById('f-pres').value;
+  const c = COSTOS[pres];
+  document.getElementById('f-costo-display').value = 'Q ' + c.total.toFixed(2);
+  calcTotal();
+}
+
+function autoFill() {
+  const sel = document.getElementById('sel-dist');
+  const opt = sel.options[sel.selectedIndex];
+  if (opt.value) {
+    document.getElementById('f-cliente').value = opt.dataset.cliente || '';
+    document.getElementById('f-producto').value = opt.dataset.producto || 'Leche Pasteurizada';
+    document.getElementById('f-pres').value = opt.dataset.pres || '1L';
+    document.getElementById('f-cant').value = opt.dataset.cant || '';
+    updateCosto();
+  }
+}
+
+function calcTotal() {
+  const pres = document.getElementById('f-pres').value;
+  const cant = parseFloat(document.getElementById('f-cant').value) || 0;
+  const precio = parseFloat(document.getElementById('f-precio').value) || 0;
+  const c = COSTOS[pres];
+
+  const materia = cant * c.materia;
+  const proceso = cant * (c.proceso + c.empaque + c.energia);
+  const mano = cant * (c.mano + c.trans + c.otros);
+  const costoT = cant * c.total;
+  const ventaT = cant * precio;
+  const ganancia = ventaT - costoT;
+  const margen = ventaT > 0 ? ((ganancia / ventaT) * 100).toFixed(1) : 0;
+
+  document.getElementById('d-materia').textContent = fmt(materia);
+  document.getElementById('d-proceso').textContent = fmt(proceso);
+  document.getElementById('d-mano').textContent = fmt(mano);
+  document.getElementById('d-costo').textContent = fmt(costoT);
+  document.getElementById('d-venta').textContent = fmt(ventaT);
+  document.getElementById('d-ganancia').textContent = fmt(ganancia) + ' (' + margen + '%)';
+  document.getElementById('d-ganancia').style.color = ganancia >= 0 ? 'var(--success)' : 'var(--danger)';
+}
+</script>
+{% endblock %}

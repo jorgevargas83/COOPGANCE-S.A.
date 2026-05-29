@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% block title %}Trazabilidad{% endblock %}
+{% block page_title %}Trazabilidad de Lotes{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2>Trazabilidad</h2>
+    <p>Seguimiento completo del ciclo de vida de un lote: recepción → calidad → producción → inventario → distribución</p>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header green">🔍 Consultar lote</div>
+  <div class="card-body">
+    <form method="POST" style="display:flex;gap:12px;align-items:flex-end">
+      <div style="flex:1">
+        <label class="form-label">Seleccione un lote</label>
+        <select name="lote_id" class="form-select" required>
+          <option value="">— Seleccione código de lote —</option>
+          {% for lote in lotes %}
+            <option value="{{ lote.id }}" {% if lote_info and lote.id == lote_info.id %}selected{% endif %}>
+              {{ lote.codigo_lote }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary" style="white-space:nowrap">🔍 Consultar</button>
+    </form>
+  </div>
+</div>
+
+{% if lote_info %}
+<div class="timeline">
+
+  <!-- PASO 1: Recepción -->
+  <div class="timeline-step">
+    <div class="timeline-dot done"></div>
+    <div class="timeline-card">
+      <div class="timeline-title">📍 Paso 1 — Recepción del lote</div>
+      <div class="detail-grid">
+        <div class="detail-item"><span>Código</span><strong class="text-mono">{{ lote_info.codigo_lote }}</strong></div>
+        <div class="detail-item"><span>Fecha registro</span>{{ lote_info.fecha_registro[:10] if lote_info.fecha_registro else '—' }}</div>
+        <div class="detail-item"><span>Productor</span>{{ lote_info.productor }}</div>
+        <div class="detail-item"><span>Centro de acopio</span>{{ lote_info.centro }}</div>
+        <div class="detail-item"><span>Volumen</span><strong>{{ lote_info.volumen_litros | int }} litros</strong></div>
+        <div class="detail-item"><span>Responsable</span>{{ lote_info.responsable_recepcion or '—' }}</div>
+        <div class="detail-item col-span-2"><span>Estado actual</span>
+          <span class="badge badge-{% if lote_info.estado_lote == 'Aprobado' %}green{% elif lote_info.estado_lote == 'Rechazado' %}red{% elif lote_info.estado_lote == 'Procesado' %}blue{% elif lote_info.estado_lote == 'Distribuido' %}teal{% else %}yellow{% endif %}">
+            {{ lote_info.estado_lote }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASO 2: Calidad -->
+  <div class="timeline-step">
+    <div class="timeline-dot {% if calidad_info %}{% if calidad_info.resultado == 'Aprobado' %}done{% else %}error{% endif %}{% else %}pending{% endif %}"></div>
+    <div class="timeline-card">
+      <div class="timeline-title">🔬 Paso 2 — Análisis de calidad</div>
+      {% if calidad_info %}
+        <div class="detail-grid">
+          <div class="detail-item"><span>Fecha análisis</span>{{ calidad_info.fecha_analisis[:10] if calidad_info.fecha_analisis else '—' }}</div>
+          <div class="detail-item"><span>Responsable</span>{{ calidad_info.responsable_calidad or '—' }}</div>
+          <div class="detail-item"><span>Temperatura</span>{{ calidad_info.temperatura }}°C</div>
+          <div class="detail-item"><span>Acidez</span>{{ calidad_info.acidez }}</div>
+          <div class="detail-item"><span>Densidad</span>{{ calidad_info.densidad }}</div>
+          <div class="detail-item"><span>Prueba alcohol</span>{{ calidad_info.prueba_alcohol }}</div>
+          <div class="detail-item"><span>Olor / Color</span>{{ calidad_info.olor }} / {{ calidad_info.color }}</div>
+          <div class="detail-item"><span>Resultado</span>
+            <span class="badge badge-{% if calidad_info.resultado == 'Aprobado' %}green{% else %}red{% endif %}">
+              {{ calidad_info.resultado }}
+            </span>
+          </div>
+        </div>
+      {% else %}
+        <p class="text-muted text-sm">⏳ Pendiente de análisis.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- PASO 3: Producción -->
+  <div class="timeline-step">
+    <div class="timeline-dot {% if produccion_info %}done{% else %}pending{% endif %}"></div>
+    <div class="timeline-card">
+      <div class="timeline-title">⚙️ Paso 3 — Pasteurización / Producción</div>
+      {% if produccion_info %}
+        <div class="detail-grid">
+          <div class="detail-item"><span>Fecha producción</span>{{ produccion_info.fecha_produccion[:10] if produccion_info.fecha_produccion else '—' }}</div>
+          <div class="detail-item"><span>Temperatura proceso</span>{{ produccion_info.temperatura_proceso }}°C</div>
+          <div class="detail-item"><span>Tiempo proceso</span>{{ produccion_info.tiempo_proceso }} segundos</div>
+          <div class="detail-item"><span>Responsable</span>{{ produccion_info.responsable_produccion or '—' }}</div>
+          <div class="detail-item"><span>Estado</span>
+            <span class="badge badge-{% if produccion_info.estado == 'Completado' %}green{% else %}blue{% endif %}">
+              {{ produccion_info.estado }}
+            </span>
+          </div>
+        </div>
+      {% else %}
+        <p class="text-muted text-sm">⏳ No procesado aún.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- PASO 4: Inventario -->
+  <div class="timeline-step">
+    <div class="timeline-dot {% if inventario_info %}done{% else %}pending{% endif %}"></div>
+    <div class="timeline-card">
+      <div class="timeline-title">📦 Paso 4 — Ingreso a inventario</div>
+      {% if inventario_info %}
+        <div class="detail-grid">
+          <div class="detail-item"><span>Producto</span>{{ inventario_info.producto }} {{ inventario_info.presentacion }}</div>
+          <div class="detail-item"><span>Cantidad</span><strong>{{ inventario_info.cantidad }} uds</strong></div>
+          <div class="detail-item"><span>Ubicación</span>{{ inventario_info.ubicacion or '—' }}</div>
+          <div class="detail-item"><span>Estado</span>
+            <span class="badge badge-green">{{ inventario_info.estado }}</span>
+          </div>
+        </div>
+      {% else %}
+        <p class="text-muted text-sm">⏳ Sin ingreso a inventario.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- PASO 5: Distribución -->
+  <div class="timeline-step">
+    <div class="timeline-dot {% if distribucion_info %}done{% else %}pending{% endif %}"></div>
+    <div class="timeline-card">
+      <div class="timeline-title">🚛 Paso 5 — Distribución</div>
+      {% if distribucion_info %}
+        <table class="data-table" style="margin-top:8px">
+          <thead>
+            <tr><th>Cliente</th><th>Producto</th><th>Cantidad</th><th>Fecha salida</th><th>Estado</th></tr>
+          </thead>
+          <tbody>
+            {% for d in distribucion_info %}
+            <tr>
+              <td class="text-sm">{{ d.cliente }}</td>
+              <td class="text-sm">{{ d.producto }}</td>
+              <td class="fw-bold">{{ d.cantidad }}</td>
+              <td class="text-sm text-muted">{{ d.fecha_salida[:10] if d.fecha_salida else '—' }}</td>
+              <td><span class="badge badge-green">{{ d.estado }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="text-muted text-sm">⏳ Sin distribuciones registradas.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if alertas_info %}
+  <!-- ALERTAS -->
+  <div class="timeline-step">
+    <div class="timeline-dot error"></div>
+    <div class="timeline-card" style="border-color:#fca5a5">
+      <div class="timeline-title" style="color:var(--danger)">🔔 Alertas asociadas</div>
+      {% for a in alertas_info %}
+        <div class="info-row">
+          <span class="text-sm">{{ a.descripcion }}</span>
+          <span class="badge badge-{% if a.estado == 'Activa' %}red{% else %}green{% endif %}">{{ a.estado }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% else %}
+  <div style="text-align:center;padding:60px;color:var(--text-muted)">
+    <div style="font-size:48px;margin-bottom:16px">🔍</div>
+    <p>Selecciona un lote para ver su trazabilidad completa.</p>
+  </div>
+{% endif %}
+{% endblock %}

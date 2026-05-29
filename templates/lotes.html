@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}Lotes{% endblock %}
+{% block page_title %}Módulo de Lotes{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2>Registro de Lotes</h2>
+    <p>Gestión de recepción de leche cruda desde los centros de acopio</p>
+  </div>
+  <button class="btn btn-primary" onclick="document.getElementById('form-nuevo').scrollIntoView({behavior:'smooth'})">
+    + Nuevo lote
+  </button>
+</div>
+
+<!-- Estadísticas rápidas -->
+<div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+  <div class="kpi-card teal" style="flex:1;min-width:130px;padding:14px">
+    <div class="kpi-value" style="font-size:22px">{{ lista_lotes | length }}</div>
+    <div class="kpi-label">Total lotes</div>
+  </div>
+  <div class="kpi-card green" style="flex:1;min-width:130px;padding:14px">
+    <div class="kpi-value" style="font-size:22px">{{ lista_lotes | selectattr('estado_lote','equalto','Aprobado') | list | length }}</div>
+    <div class="kpi-label">Aprobados</div>
+  </div>
+  <div class="kpi-card yellow" style="flex:1;min-width:130px;padding:14px">
+    <div class="kpi-value" style="font-size:22px">{{ lista_lotes | selectattr('estado_lote','equalto','Pendiente de análisis') | list | length }}</div>
+    <div class="kpi-label">Pendientes</div>
+  </div>
+  <div class="kpi-card red" style="flex:1;min-width:130px;padding:14px">
+    <div class="kpi-value" style="font-size:22px">{{ lista_lotes | selectattr('estado_lote','equalto','Rechazado') | list | length }}</div>
+    <div class="kpi-label">Rechazados</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- FORMULARIO -->
+  <div id="form-nuevo">
+    <div class="card">
+      <div class="card-header green">+ Registrar nuevo lote</div>
+      <div class="card-body">
+        <form method="POST">
+          <div class="form-group">
+            <label class="form-label">Productor</label>
+            <select name="productor_id" class="form-select" required>
+              <option value="">— Seleccione productor —</option>
+              {% for p in productores %}
+                <option value="{{ p.id }}">{{ p.nombre }} ({{ p.departamento or p.direccion }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Centro de acopio</label>
+            <select name="centro_id" class="form-select" required>
+              <option value="">— Seleccione centro —</option>
+              {% for c in centros %}
+                <option value="{{ c.id }}">{{ c.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Volumen recibido (litros)</label>
+            <input type="number" step="0.01" min="1" name="volumen_litros" class="form-control" placeholder="Ej: 3200.00" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Responsable de recepción</label>
+            <input type="text" name="responsable_recepcion" class="form-control" placeholder="Nombre completo" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Observaciones (opcional)</label>
+            <textarea name="observaciones" class="form-control" rows="2" placeholder="Notas adicionales…"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">💾 Guardar lote</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLA -->
+  <div class="card">
+    <div class="card-header dark">📋 Lotes registrados</div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Fecha</th>
+            <th>Productor</th>
+            <th>Centro</th>
+            <th>Volumen</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lote in lista_lotes %}
+          <tr>
+            <td class="text-mono fw-bold" style="font-size:12px">{{ lote.codigo_lote }}</td>
+            <td class="text-sm text-muted"> {{ lote.fecha_registro|string|truncate(10, True, '') if lote.fecha_registro else '—' }}
+            <td class="text-sm">{{ lote.productor }}</td>
+            <td class="text-sm">{{ lote.centro.replace('Centro de Acopio ', '') }}</td>
+            <td class="text-sm fw-bold">{{ lote.volumen_litros | int }} L</td>
+            <td>
+              {% if lote.estado_lote == 'Pendiente de análisis' %}
+                <span class="badge badge-yellow">⏳ Pendiente</span>
+              {% elif lote.estado_lote == 'Aprobado' %}
+                <span class="badge badge-green">✅ Aprobado</span>
+              {% elif lote.estado_lote == 'Rechazado' %}
+                <span class="badge badge-red">❌ Rechazado</span>
+              {% elif lote.estado_lote == 'Procesado' %}
+                <span class="badge badge-blue">⚙️ Procesado</span>
+              {% elif lote.estado_lote == 'Distribuido' %}
+                <span class="badge badge-teal">🚛 Distribuido</span>
+              {% else %}
+                <span class="badge badge-gray">{{ lote.estado_lote }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr class="empty-row"><td colspan="6">No hay lotes registrados.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

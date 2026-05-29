@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% block title %}Calidad{% endblock %}
+{% block page_title %}Control de Calidad{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2>Análisis de Calidad</h2>
+    <p>Evaluación fisicoquímica de lotes. Parámetros COGUANOR NGO 34 151</p>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- FORMULARIO -->
+  <div class="card">
+    <div class="card-header green">🔬 Registrar análisis</div>
+    <div class="card-body">
+      {% if lotes_pendientes %}
+      <form method="POST">
+        <div class="form-group">
+          <label class="form-label">Lote pendiente</label>
+          <select name="lote_id" class="form-select" required>
+            <option value="">— Seleccione lote —</option>
+            {% for lote in lotes_pendientes %}
+              <option value="{{ lote.id }}">{{ lote.codigo_lote }} — {{ lote.volumen_litros | int }} L</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Temperatura (°C) <span style="color:var(--text-muted)">[2–6]</span></label>
+            <input type="number" step="0.1" name="temperatura" class="form-control" placeholder="4.0" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Acidez <span style="color:var(--text-muted)">[0.13–0.17]</span></label>
+            <input type="number" step="0.001" name="acidez" class="form-control" placeholder="0.160" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Densidad <span style="color:var(--text-muted)">[1.028–1.034]</span></label>
+            <input type="number" step="0.0001" name="densidad" class="form-control" placeholder="1.0300" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Prueba de alcohol</label>
+            <select name="prueba_alcohol" class="form-select" required>
+              <option value="Negativa">✅ Negativa</option>
+              <option value="Positiva">❌ Positiva</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Olor</label>
+            <select name="olor" class="form-select" required>
+              <option value="Normal">✅ Normal</option>
+              <option value="Anormal">❌ Anormal</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Color</label>
+            <select name="color" class="form-select" required>
+              <option value="Blanco uniforme">✅ Blanco uniforme</option>
+              <option value="Alterado">❌ Alterado</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Responsable de calidad</label>
+          <input type="text" name="responsable_calidad" class="form-control" placeholder="Nombre del analista" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Observaciones (opcional)</label>
+          <textarea name="observaciones" class="form-control" rows="2" placeholder="Notas del análisis…"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">💾 Registrar análisis</button>
+      </form>
+      {% else %}
+        <div style="text-align:center;padding:32px;color:var(--text-muted)">
+          <div style="font-size:40px;margin-bottom:12px">✅</div>
+          <p>No hay lotes pendientes de análisis.</p>
+          <a href="/lotes" class="btn btn-outline btn-sm" style="margin-top:12px">Ir a Lotes</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div class="card">
+    <div class="card-header dark">📋 Historial de análisis</div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Lote</th>
+            <th>Fecha</th>
+            <th>Temp.</th>
+            <th>Acidez</th>
+            <th>Densidad</th>
+            <th>Alcohol</th>
+            <th>Resultado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in historial %}
+          <tr>
+            <td class="text-mono" style="font-size:11px;font-weight:600">{{ item.codigo_lote }}</td>
+            <td class="text-sm text-muted"> {{ item.fecha_analisis.strftime('%d/%m/%Y %H:%M') if item.fecha_analisis else '—' }} </td>
+            <td class="text-sm">{{ item.temperatura }}°C</td>
+            <td class="text-sm {% if item.acidez < 0.13 or item.acidez > 0.17 %}fw-bold{% endif %}"
+                style="{% if item.acidez < 0.13 or item.acidez > 0.17 %}color:var(--danger){% endif %}">
+              {{ item.acidez }}
+            </td>
+            <td class="text-sm">{{ item.densidad }}</td>
+            <td>
+              {% if item.prueba_alcohol == 'Negativa' %}
+                <span class="badge badge-green">Neg.</span>
+              {% else %}
+                <span class="badge badge-red">Pos.</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if item.resultado == 'Aprobado' %}
+                <span class="badge badge-green">✅ Aprobado</span>
+              {% else %}
+                <span class="badge badge-red">❌ Rechazado</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr class="empty-row"><td colspan="7">Sin análisis registrados.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

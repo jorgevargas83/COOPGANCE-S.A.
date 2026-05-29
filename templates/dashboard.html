@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Panel Principal{% endblock %}
+
+{% block content %}
+<div class="kpi-grid">
+  <div class="kpi-card teal">
+    <div class="kpi-icon">🗂️</div>
+    <div class="kpi-value">{{ total_lotes }}</div>
+    <div class="kpi-label">Total lotes registrados</div>
+  </div>
+  <div class="kpi-card green">
+    <div class="kpi-icon">✅</div>
+    <div class="kpi-value">{{ aprobados }}</div>
+    <div class="kpi-label">Lotes aprobados</div>
+  </div>
+  <div class="kpi-card red">
+    <div class="kpi-icon">❌</div>
+    <div class="kpi-value">{{ rechazados }}</div>
+    <div class="kpi-label">Lotes rechazados</div>
+  </div>
+  <div class="kpi-card blue">
+    <div class="kpi-icon">⚙️</div>
+    <div class="kpi-value">{{ procesados }}</div>
+    <div class="kpi-label">Lotes procesados</div>
+  </div>
+  <div class="kpi-card yellow">
+    <div class="kpi-icon">🔔</div>
+    <div class="kpi-value">{{ alertas }}</div>
+    <div class="kpi-label">Alertas activas</div>
+  </div>
+  <div class="kpi-card gold">
+    <div class="kpi-icon">📦</div>
+    <div class="kpi-value">{{ inventario_total }}</div>
+    <div class="kpi-label">Unidades en inventario</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- Volumen por mes -->
+  <div class="card">
+    <div class="card-header green">📈 Volumen recibido por mes (litros)</div>
+    <div class="card-body">
+      {% if volumen_meses %}
+        <div style="display:flex;align-items:flex-end;gap:8px;height:100px;margin-bottom:8px">
+          {% set max_vol = volumen_meses | map(attribute='total') | max %}
+          {% for m in volumen_meses %}
+            {% set h = ((m.total / max_vol) * 90) | int %}
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+              <span style="font-size:10px;color:var(--text-muted);font-weight:600">{{ m.total | int }}</span>
+              <div style="width:100%;height:{{ h }}px;background:var(--primary);border-radius:4px 4px 0 0;min-height:4px"></div>
+              <span style="font-size:9px;color:var(--text-muted)">{{ m.mes }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted text-sm">Sin datos de volumen.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Calidad donut-like -->
+  <div class="card">
+    <div class="card-header dark">🔬 Resumen de calidad</div>
+    <div class="card-body">
+      {% if total_lotes > 0 %}
+        {% set pct_aprobados = ((aprobados / total_lotes) * 100) | round(1) %}
+        <div style="margin-bottom:16px">
+          <div class="flex justify-between mb-1" style="margin-bottom:6px">
+            <span class="text-sm">Aprobados ({{ pct_aprobados }}%)</span>
+            <span class="badge badge-green">{{ aprobados }}</span>
+          </div>
+          <div class="progress-wrap"><div class="progress-fill" style="width:{{ pct_aprobados }}%"></div></div>
+        </div>
+        {% if rechazados > 0 %}
+          {% set pct_rechazados = ((rechazados / total_lotes) * 100) | round(1) %}
+          <div style="margin-bottom:16px">
+            <div class="flex justify-between mb-1" style="margin-bottom:6px">
+              <span class="text-sm">Rechazados ({{ pct_rechazados }}%)</span>
+              <span class="badge badge-red">{{ rechazados }}</span>
+            </div>
+            <div class="progress-wrap"><div class="progress-fill danger" style="width:{{ pct_rechazados }}%"></div></div>
+          </div>
+        {% endif %}
+        <div class="info-row">
+          <span class="label">Tasa de aprobación</span>
+          <strong style="color:var(--success)">{{ pct_aprobados }}%</strong>
+        </div>
+        <div class="info-row">
+          <span class="label">Volumen total recibido</span>
+          <strong>{{ volumen_total | int }} L</strong>
+        </div>
+      {% else %}
+        <p class="text-muted text-sm">Sin datos aún.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Distribución por cliente -->
+  <div class="card">
+    <div class="card-header dark">🚛 Top clientes (unidades despachadas)</div>
+    <div class="card-body">
+      {% if top_clientes %}
+        {% for c in top_clientes %}
+        <div class="info-row">
+          <span class="text-sm">{{ c.cliente }}</span>
+          <strong>{{ c.total }}</strong>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted text-sm">Sin distribuciones registradas.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Últimas alertas -->
+  <div class="card">
+    <div class="card-header" style="background:#dc2626;color:#fff">🔔 Alertas recientes</div>
+    <div class="card-body" style="padding:0">
+      {% if ultimas_alertas %}
+        {% for a in ultimas_alertas %}
+        <div class="info-row" style="padding:12px 16px">
+          <div>
+            <div class="text-sm fw-bold">{{ a.tipo_alerta }}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">{{ a.descripcion[:60] }}{% if a.descripcion|length > 60 %}…{% endif %}</div>
+          </div>
+          {% if a.estado == 'Activa' %}
+            <span class="badge badge-red">Activa</span>
+          {% elif a.estado == 'Resuelta' %}
+            <span class="badge badge-green">Resuelta</span>
+          {% else %}
+            <span class="badge badge-yellow">{{ a.estado }}</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px">
+          ✅ Sin alertas activas
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

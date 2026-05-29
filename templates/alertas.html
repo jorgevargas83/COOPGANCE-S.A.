@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}Alertas{% endblock %}
+{% block page_title %}Sistema de Alertas{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2>Alertas del Sistema</h2>
+    <p>Notificaciones automáticas sobre calidad, inventario y mantenimiento</p>
+  </div>
+</div>
+
+{% set activas = lista_alertas | selectattr('estado','equalto','Activa') | list %}
+{% set en_revision = lista_alertas | selectattr('estado','equalto','En revisión') | list %}
+
+{% if activas %}
+<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:var(--radius);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:10px">
+  <span style="font-size:20px">🔔</span>
+  <div>
+    <strong style="color:#991b1b">{{ activas | length }} alerta{{ 's' if activas | length > 1 else '' }} activa{{ 's' if activas | length > 1 else '' }}</strong>
+    <span style="color:#b91c1c;font-size:12px;margin-left:8px">— Requiere atención inmediata</span>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header dark">🔔 Todas las alertas</div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Fecha</th>
+          <th>Tipo</th>
+          <th>Lote</th>
+          <th>Descripción</th>
+          <th>Estado</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in lista_alertas %}
+        <tr {% if a.estado == 'Activa' %}style="background:#fff8f8"{% endif %}>
+          <td class="text-mono text-muted" style="font-size:11px">{{ a.id }}</td>
+          <td class="text-sm text-muted">{{ a.fecha_alerta.strftime('%d/%m/%Y %H:%M') if a.fecha_alerta else '—' }}</td>
+          <td>
+            {% if a.tipo_alerta == 'Lote rechazado' %}
+              <span class="badge badge-red">❌ {{ a.tipo_alerta }}</span>
+            {% elif a.tipo_alerta == 'Inventario bajo' %}
+              <span class="badge badge-yellow">📦 {{ a.tipo_alerta }}</span>
+            {% elif a.tipo_alerta == 'Mantenimiento' %}
+              <span class="badge badge-blue">🔧 {{ a.tipo_alerta }}</span>
+            {% else %}
+              <span class="badge badge-gray">{{ a.tipo_alerta }}</span>
+            {% endif %}
+          </td>
+          <td class="text-mono" style="font-size:11px;color:var(--text-muted)">
+            {{ a.codigo_lote if a.codigo_lote else '—' }}
+          </td>
+          <td class="text-sm" style="max-width:300px">{{ a.descripcion }}</td>
+          <td>
+            {% if a.estado == 'Activa' %}
+              <span class="badge badge-red">🔴 Activa</span>
+            {% elif a.estado == 'Resuelta' %}
+              <span class="badge badge-green">✅ Resuelta</span>
+            {% else %}
+              <span class="badge badge-yellow">🔄 En revisión</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if a.estado == 'Activa' %}
+            <form method="POST" action="/resolver_alerta/{{ a.id }}">
+              <button type="submit" class="btn btn-sm btn-outline">✅ Resolver</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr class="empty-row"><td colspan="7">✅ Sin alertas registradas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

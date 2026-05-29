@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}Producción{% endblock %}
+{% block page_title %}Módulo de Producción{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2>Control de Producción</h2>
+    <p>Pasteurización HTST — 72°C por 15 segundos (COGUANOR)</p>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header green">⚙️ Registrar proceso de pasteurización</div>
+    <div class="card-body">
+      {% if lotes_aprobados %}
+      <form method="POST">
+        <div class="form-group">
+          <label class="form-label">Lote aprobado para procesar</label>
+          <select name="lote_id" class="form-select" required>
+            <option value="">— Seleccione lote —</option>
+            {% for lote in lotes_aprobados %}
+              <option value="{{ lote.id }}">{{ lote.codigo_lote }} — {{ lote.volumen_litros | int }} L</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Presentación a producir</label>
+          <select name="presentacion" class="form-select" required>
+            <option value="1L">1 Litro</option>
+            <option value="500ml">500 ml</option>
+            <option value="250ml">250 ml</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Temperatura proceso (°C) <span style="color:var(--text-muted)">[72–75]</span></label>
+            <input type="number" step="0.1" name="temperatura" class="form-control" placeholder="72.5" value="72.5" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tiempo (segundos) <span style="color:var(--text-muted)">[15]</span></label>
+            <input type="number" name="tiempo" class="form-control" placeholder="15" value="15" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Responsable de producción</label>
+          <input type="text" name="responsable_produccion" class="form-control" placeholder="Nombre del operario" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Observaciones (opcional)</label>
+          <textarea name="observaciones" class="form-control" rows="2" placeholder="Notas del proceso…"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">⚙️ Registrar producción</button>
+      </form>
+      {% else %}
+        <div style="text-align:center;padding:32px;color:var(--text-muted)">
+          <div style="font-size:40px;margin-bottom:12px">⏳</div>
+          <p>No hay lotes aprobados pendientes de producción.</p>
+          <a href="/calidad" class="btn btn-outline btn-sm" style="margin-top:12px">Ir a Calidad</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header dark">📋 Historial de producción</div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Lote</th><th>Fecha</th><th>Temp.</th><th>Tiempo</th><th>Responsable</th><th>Estado</th></tr>
+        </thead>
+        <tbody>
+          {% for item in historial %}
+          <tr>
+            <td class="text-mono" style="font-size:11px;font-weight:600">{{ item.codigo_lote }}</td>
+           <td class="text-sm text-muted"> {{ item.fecha_produccion.strftime('%d/%m/%Y %H:%M') if item.fecha_produccion else '—' }} </td>
+            <td class="text-sm">{{ item.temperatura_proceso }}°C</td>
+            <td class="text-sm">{{ item.tiempo_proceso }}s</td>
+            <td class="text-sm">{{ item.responsable_produccion or '—' }}</td>
+            <td>
+              {% if item.estado == 'Completado' %}
+                <span class="badge badge-green">✅ Completado</span>
+              {% elif item.estado == 'En proceso' %}
+                <span class="badge badge-blue">⚙️ En proceso</span>
+              {% else %}
+                <span class="badge badge-red">❌ Error</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr class="empty-row"><td colspan="6">Sin producciones registradas.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

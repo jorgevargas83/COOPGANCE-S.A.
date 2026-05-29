@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Distribución{% endblock %}
+{% block page_title %}Distribución y Despachos{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2>Distribución</h2>
+    <p>Registro de despachos a clientes y supermercados</p>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header green">🚛 Registrar despacho</div>
+    <div class="card-body">
+      <form method="POST">
+        <div class="form-group">
+          <label class="form-label">Producto del inventario</label>
+          <select name="inventario_id" class="form-select" required>
+            <option value="">— Seleccione producto —</option>
+            {% for item in inventario_lista %}
+              <option value="{{ item.id }}">{{ item.producto }} {{ item.presentacion }} — {{ item.cantidad }} uds ({{ item.ubicacion }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cliente</label>
+          <input type="text" name="cliente" class="form-control" placeholder="Nombre del cliente / supermercado" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cantidad a despachar</label>
+          <input type="number" name="cantidad" min="1" class="form-control" placeholder="Número de unidades" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Responsable del despacho</label>
+          <input type="text" name="responsable" class="form-control" placeholder="Nombre del responsable" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">📦 Registrar despacho</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header dark">📋 Historial de distribuciones</div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Fecha</th><th>Cliente</th><th>Producto</th><th>Cant.</th><th>Lote</th><th>Estado</th></tr>
+        </thead>
+        <tbody>
+          {% for d in historial %}
+          <tr>
+            <td class="text-sm text-muted">{{ d.fecha_salida.strftime('%d/%m/%Y %H:%M') if d.fecha_salida else '—' }}</td>
+            <td class="text-sm fw-bold">{{ d.cliente }}</td>
+            <td class="text-sm">{{ d.producto }} {{ d.presentacion or '' }}</td>
+            <td class="fw-bold">{{ d.cantidad }}</td>
+            <td class="text-mono" style="font-size:11px;color:var(--text-muted)">{{ d.origen_lote or '—' }}</td>
+            <td>
+              {% if d.estado == 'Entregado' %}
+                <span class="badge badge-green">✅ Entregado</span>
+              {% elif d.estado == 'En ruta' %}
+                <span class="badge badge-blue">🚛 En ruta</span>
+              {% elif d.estado == 'Pendiente' %}
+                <span class="badge badge-yellow">⏳ Pendiente</span>
+              {% else %}
+                <span class="badge badge-red">❌ Cancelado</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr class="empty-row"><td colspan="6">Sin distribuciones registradas.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

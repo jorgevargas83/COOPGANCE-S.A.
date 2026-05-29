@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Inventario{% endblock %}
+{% block page_title %}Inventario de Producto Terminado{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2>Inventario</h2>
+    <p>Stock de leche pasteurizada disponible en bodegas</p>
+  </div>
+</div>
+
+<!-- Resumen por presentación -->
+{% if resumen_presentacion %}
+<div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+  {% for r in resumen_presentacion %}
+  <div class="kpi-card gold" style="flex:1;min-width:160px;padding:16px">
+    <div class="kpi-icon">🥛</div>
+    <div class="kpi-value" style="font-size:24px">{{ r.total | int }}</div>
+    <div class="kpi-label">{{ r.presentacion }} — {{ r.producto }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header dark">📦 Stock actual</div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Producto</th>
+          <th>Presentación</th>
+          <th>Cantidad</th>
+          <th>Ubicación</th>
+          <th>Origen / Lote</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in inventario_lista %}
+        <tr>
+          <td class="text-mono text-muted" style="font-size:11px">{{ item.id }}</td>
+          <td class="fw-bold text-sm">{{ item.producto }}</td>
+          <td><span class="badge badge-blue">{{ item.presentacion }}</span></td>
+          <td class="fw-bold" style="font-size:15px">{{ item.cantidad }}</td>
+          <td class="text-sm text-muted">{{ item.ubicacion or '—' }}</td>
+          <td class="text-mono text-sm text-muted">{{ item.origen or '—' }}</td>
+          <td class="text-sm text-muted">{{ item.fecha_registro.strftime('%d/%m/%Y') if item.fecha_registro else '—' }}</td>
+          <td>
+            {% if item.estado == 'En almacén' %}
+              <span class="badge badge-green">En almacén</span>
+            {% elif item.estado == 'En despacho' %}
+              <span class="badge badge-blue">En despacho</span>
+            {% elif item.estado == 'Agotado' %}
+              <span class="badge badge-gray">Agotado</span>
+            {% elif item.estado == 'Reservado' %}
+              <span class="badge badge-yellow">Reservado</span>
+            {% else %}
+              <span class="badge badge-gray">{{ item.estado }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <form method="POST" action="/mover_inventario/{{ item.id }}" style="display:inline">
+              <select name="ubicacion" class="form-select" style="width:140px;font-size:11px;padding:4px 8px;display:inline-block">
+                <option value="{{ item.ubicacion or '' }}">{{ item.ubicacion or 'Bodega A' }}</option>
+                <option value="Bodega A">Bodega A</option>
+                <option value="Bodega B">Bodega B</option>
+                <option value="Bodega C">Bodega C</option>
+                <option value="Área de Despacho">Despacho</option>
+              </select>
+              <button type="submit" class="btn btn-sm btn-outline" style="margin-left:4px">↑</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr class="empty-row"><td colspan="9">No hay productos en inventario.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
